@@ -125,9 +125,6 @@ public struct TextView: View {
                 .opacity(isEmpty ? 1 : 0),
             alignment: .topLeading
         )
-        .onChange(of: maxHeightUntilForceScrolling) {
-            print("Max height: \($1)")
-        }
     }
 
 }
