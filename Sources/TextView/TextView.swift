@@ -1,6 +1,7 @@
 import SwiftUI
 
 /// A SwiftUI TextView implementation that supports both scrolling and auto-sizing layouts
+@available(iOS 17.0, *)
 public struct TextView: View {
 
     @Environment(\.layoutDirection) private var layoutDirection
@@ -29,6 +30,8 @@ public struct TextView: View {
     var enablesReturnKeyAutomatically: Bool?
     var autoDetectionTypes: UIDataDetectorTypes = []
     var allowRichText: Bool
+    var textViewInsets: EdgeInsets = .init()
+    var maxHeightUntilForceScrolling: CGFloat = .infinity
 
     /// Makes a new TextView with the specified configuration
     /// - Parameters:
@@ -82,7 +85,13 @@ public struct TextView: View {
     public var body: some View {
         Representable(
             text: $text,
-            calculatedHeight: $calculatedHeight,
+            calculatedHeight: Binding(
+                get: {
+                    calculatedHeight
+                }, set: { newVal in
+                    calculatedHeight = newVal < maxHeightUntilForceScrolling ? newVal : maxHeightUntilForceScrolling
+                }
+            ),
             foregroundColor: foregroundColor,
             autocapitalization: autocapitalization,
             multilineTextAlignment: multilineTextAlignment,
@@ -93,17 +102,18 @@ public struct TextView: View {
             truncationMode: truncationMode,
             isEditable: isEditable,
             isSelectable: isSelectable,
-            isScrollingEnabled: isScrollingEnabled,
+            isScrollingEnabled: calculatedHeight >= maxHeightUntilForceScrolling ? true : isScrollingEnabled,
             enablesReturnKeyAutomatically: enablesReturnKeyAutomatically,
             autoDetectionTypes: autoDetectionTypes,
             allowsRichText: allowRichText,
             onEditingChanged: onEditingChanged,
             shouldEditInRange: shouldEditInRange,
-            onCommit: onCommit
+            onCommit: onCommit,
+            insets: textViewInsets
         )
         .frame(
             minHeight: isScrollingEnabled ? 0 : calculatedHeight,
-            maxHeight: isScrollingEnabled ? .infinity : calculatedHeight
+            maxHeight: min(maxHeightUntilForceScrolling, isScrollingEnabled ? .infinity : calculatedHeight)
         )
         .background(
             placeholderView?
@@ -115,6 +125,9 @@ public struct TextView: View {
                 .opacity(isEmpty ? 1 : 0),
             alignment: .topLeading
         )
+        .onChange(of: maxHeightUntilForceScrolling) {
+            print("Max height: \($1)")
+        }
     }
 
 }
@@ -133,6 +146,7 @@ final class UIKitTextView: UITextView {
 
 }
 
+@available(iOS 17.0, *)
 struct RoundedTextView: View {
     @State private var text: NSAttributedString = .init()
 
@@ -168,6 +182,7 @@ struct RoundedTextView: View {
     }
 }
 
+@available(iOS 17.0, *)
 struct TextView_Previews: PreviewProvider {
     static var previews: some View {
         RoundedTextView()

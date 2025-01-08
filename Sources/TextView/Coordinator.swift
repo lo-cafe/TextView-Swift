@@ -1,5 +1,6 @@
 import SwiftUI
 
+@available(iOS 17.0, *)
 extension TextView.Representable {
     final class Coordinator: NSObject, UITextViewDelegate {
 
@@ -7,7 +8,7 @@ extension TextView.Representable {
 
         private var originalText: NSAttributedString = .init()
         private var text: Binding<NSAttributedString>
-        private var calculatedHeight: Binding<CGFloat>
+        var calculatedHeight: Binding<CGFloat>
 
         var onCommit: (() -> Void)?
         var onEditingChanged: (() -> Void)?
@@ -65,6 +66,7 @@ extension TextView.Representable {
 
 }
 
+@available(iOS 17.0, *)
 extension TextView.Representable.Coordinator {
 
     func update(representable: TextView.Representable) {
@@ -103,7 +105,12 @@ extension TextView.Representable.Coordinator {
 
         if !representable.isScrollingEnabled {
             textView.textContainer.lineFragmentPadding = 0
-            textView.textContainerInset = .zero
+            textView.textContainerInset = UIEdgeInsets(
+                top: representable.insets.top, 
+                left: representable.insets.leading, 
+                bottom: representable.insets.bottom, 
+                right: representable.insets.trailing
+            )
         }
 
         recalculateHeight()

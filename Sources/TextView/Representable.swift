@@ -1,5 +1,6 @@
 import SwiftUI
 
+@available(iOS 17.0, *)
 extension TextView {
     struct Representable: UIViewRepresentable {
 
@@ -24,6 +25,8 @@ extension TextView {
         var onEditingChanged: (() -> Void)?
         var shouldEditInRange: ((Range<String.Index>, String) -> Bool)?
         var onCommit: (() -> Void)?
+        var insets: EdgeInsets = .init()
+        var maxHeight: CGFloat = .infinity
 
         func makeUIView(context: Context) -> UIKitTextView {
             context.coordinator.textView
@@ -31,6 +34,7 @@ extension TextView {
 
         func updateUIView(_ view: UIKitTextView, context: Context) {
             context.coordinator.update(representable: self)
+            context.coordinator.calculatedHeight = self.$calculatedHeight
         }
 
         @discardableResult func makeCoordinator() -> Coordinator {
