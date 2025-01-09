@@ -2,10 +2,29 @@ import SwiftUI
 
 @available(iOS 17.0, *)
 extension TextView {
-    struct Representable: UIViewRepresentable {
+    struct Representable: UIViewRepresentable, Equatable {
+        static func == (lhs: TextView.Representable, rhs: TextView.Representable) -> Bool {
+            lhs.foregroundColor == rhs.foregroundColor
+            && lhs.autocapitalization == rhs.autocapitalization
+            && lhs.multilineTextAlignment == rhs.multilineTextAlignment
+            && lhs.font == rhs.font
+            && lhs.returnKeyType == rhs.returnKeyType
+            && lhs.clearsOnInsertion == rhs.clearsOnInsertion
+            && lhs.autocorrection == rhs.autocorrection
+            && lhs.truncationMode == rhs.truncationMode
+            && lhs.isEditable == rhs.isEditable
+            && lhs.isSelectable == rhs.isSelectable
+            && lhs.isScrollingEnabled == rhs.isScrollingEnabled
+            && lhs.enablesReturnKeyAutomatically == rhs.enablesReturnKeyAutomatically
+            && lhs.autoDetectionTypes == rhs.autoDetectionTypes
+            && lhs.allowsRichText == rhs.allowsRichText
+            && lhs.insets == rhs.insets
+            && lhs.maxHeight == rhs.maxHeight
+        }
 
         @Binding var text: NSAttributedString
         @Binding var calculatedHeight: CGFloat
+        var isFocusing: Binding<Bool>? = nil
 
         let foregroundColor: UIColor
         let autocapitalization: UITextAutocapitalizationType
@@ -35,6 +54,7 @@ extension TextView {
         func updateUIView(_ view: UIKitTextView, context: Context) {
             context.coordinator.update(representable: self)
             context.coordinator.calculatedHeight = self.$calculatedHeight
+            context.coordinator.isFocusing = self.isFocusing
         }
 
         @discardableResult func makeCoordinator() -> Coordinator {

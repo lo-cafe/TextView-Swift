@@ -2,20 +2,42 @@ import SwiftUI
 
 /// A SwiftUI TextView implementation that supports both scrolling and auto-sizing layouts
 @available(iOS 17.0, *)
-public struct TextView: View {
-
+public struct TextView<PlaceholderView>: View, Equatable where PlaceholderView : Equatable, PlaceholderView : View {
+    public static func == (lhs: TextView, rhs: TextView) -> Bool {
+        lhs.placeholderView == rhs.placeholderView
+        && lhs.foregroundColor == rhs.foregroundColor
+        && lhs.autocapitalization == rhs.autocapitalization
+        && lhs.multilineTextAlignment == rhs.multilineTextAlignment
+        && lhs.font == rhs.font
+        && lhs.returnKeyType == rhs.returnKeyType
+        && lhs.clearsOnInsertion == rhs.clearsOnInsertion
+        && lhs.autocorrection == rhs.autocorrection
+        && lhs.truncationMode == rhs.truncationMode
+        && lhs.isEditable == rhs.isEditable
+        && lhs.isSelectable == rhs.isSelectable
+        && lhs.isScrollingEnabled == rhs.isScrollingEnabled
+        && lhs.enablesReturnKeyAutomatically == rhs.enablesReturnKeyAutomatically
+        && lhs.autoDetectionTypes == rhs.autoDetectionTypes
+        && lhs.allowRichText == rhs.allowRichText
+        && lhs.textViewInsets == rhs.textViewInsets
+        && lhs.maxHeightUntilForceScrolling == rhs.maxHeightUntilForceScrolling
+        
+    }
+    
+    
     @Environment(\.layoutDirection) private var layoutDirection
-
+    
     @Binding private var text: NSAttributedString
     @Binding private var isEmpty: Bool
-
+    
     @State private var calculatedHeight: CGFloat = 44
-
+    
     private var onEditingChanged: (() -> Void)?
     private var shouldEditInRange: ((Range<String.Index>, String) -> Bool)?
     private var onCommit: (() -> Void)?
-
-    var placeholderView: AnyView?
+    
+    var isFocusing: Binding<Bool>?
+    var placeholderView: PlaceholderView
     var foregroundColor: UIColor = .label
     var autocapitalization: UITextAutocapitalizationType = .sentences
     var multilineTextAlignment: TextAlignment = .leading
@@ -32,56 +54,66 @@ public struct TextView: View {
     var allowRichText: Bool
     var textViewInsets: EdgeInsets = .init()
     var maxHeightUntilForceScrolling: CGFloat = .infinity
-
+    
     /// Makes a new TextView with the specified configuration
     /// - Parameters:
     ///   - text: A binding to the text
     ///   - shouldEditInRange: A closure that's called before an edit it applied, allowing the consumer to prevent the change
     ///   - onEditingChanged: A closure that's called after an edit has been applied
     ///   - onCommit: If this is provided, the field will automatically lose focus when the return key is pressed
-    public init(_ text: Binding<String>,
-         shouldEditInRange: ((Range<String.Index>, String) -> Bool)? = nil,
-         onEditingChanged: (() -> Void)? = nil,
-         onCommit: (() -> Void)? = nil
+    public init(
+        _ text: Binding<String>,
+        @ViewBuilder placeholderView: @escaping () -> PlaceholderView,
+        isFocusing: Binding<Bool>? = nil,
+        shouldEditInRange: ((Range<String.Index>, String) -> Bool)? = nil,
+        onEditingChanged: (() -> Void)? = nil,
+        onCommit: (() -> Void)? = nil
     ) {
+        self.placeholderView = placeholderView()
+        self.isFocusing = isFocusing
         _text = Binding(
             get: { NSAttributedString(string: text.wrappedValue) },
             set: { text.wrappedValue = $0.string }
         )
-
+        
         _isEmpty = Binding(
             get: { text.wrappedValue.isEmpty },
             set: { _ in }
         )
-
+        
         self.onCommit = onCommit
         self.shouldEditInRange = shouldEditInRange
         self.onEditingChanged = onEditingChanged
-
+        
         allowRichText = false
     }
-
+    
     /// Makes a new TextView that supports `NSAttributedString`
     /// - Parameters:
     ///   - text: A binding to the attributed text
     ///   - onEditingChanged: A closure that's called after an edit has been applied
     ///   - onCommit: If this is provided, the field will automatically lose focus when the return key is pressed
-    public init(_ text: Binding<NSAttributedString>,
-                onEditingChanged: (() -> Void)? = nil,
-                onCommit: (() -> Void)? = nil
+    public init(
+        _ text: Binding<NSAttributedString>,
+        @ViewBuilder placeholderView: @escaping () -> PlaceholderView,
+        isFocusing: Binding<Bool>? = nil,
+        onEditingChanged: (() -> Void)? = nil,
+        onCommit: (() -> Void)? = nil
     ) {
+        self.placeholderView = placeholderView()
         _text = text
         _isEmpty = Binding(
             get: { text.wrappedValue.string.isEmpty },
             set: { _ in }
         )
-
+        
         self.onCommit = onCommit
         self.onEditingChanged = onEditingChanged
-
+        self.isFocusing = isFocusing
+        
         allowRichText = true
     }
-
+    
     public var body: some View {
         Representable(
             text: $text,
@@ -92,6 +124,7 @@ public struct TextView: View {
                     calculatedHeight = newVal < maxHeightUntilForceScrolling ? newVal : maxHeightUntilForceScrolling
                 }
             ),
+            isFocusing: isFocusing,
             foregroundColor: foregroundColor,
             autocapitalization: autocapitalization,
             multilineTextAlignment: multilineTextAlignment,
@@ -116,7 +149,7 @@ public struct TextView: View {
             maxHeight: min(maxHeightUntilForceScrolling, isScrollingEnabled ? .infinity : calculatedHeight)
         )
         .background(
-            placeholderView?
+            placeholderView
                 .foregroundColor(Color(.placeholderText))
                 .multilineTextAlignment(multilineTextAlignment)
                 .font(Font(font))
@@ -126,62 +159,85 @@ public struct TextView: View {
             alignment: .topLeading
         )
     }
+    
+}
 
+@available(iOS 17.0, *)
+extension TextView where PlaceholderView == EmptyEquatableView {
+    /// Makes a new TextView with the specified configuration
+    /// - Parameters:
+    ///   - text: A binding to the text
+    ///   - shouldEditInRange: A closure that's called before an edit it applied, allowing the consumer to prevent the change
+    ///   - onEditingChanged: A closure that's called after an edit has been applied
+    ///   - onCommit: If this is provided, the field will automatically lose focus when the return key is pressed
+    init(
+        _ text: Binding<String>,
+        isFocusing: Binding<Bool>? = nil,
+        shouldEditInRange: ((Range<String.Index>, String) -> Bool)? = nil,
+        onEditingChanged: (() -> Void)? = nil,
+        onCommit: (() -> Void)? = nil
+    ) {
+        self.placeholderView = EmptyEquatableView()
+        self.isFocusing = isFocusing
+        _text = Binding(
+            get: { NSAttributedString(string: text.wrappedValue) },
+            set: { text.wrappedValue = $0.string }
+        )
+        
+        _isEmpty = Binding(
+            get: { text.wrappedValue.isEmpty },
+            set: { _ in }
+        )
+        
+        self.onCommit = onCommit
+        self.shouldEditInRange = shouldEditInRange
+        self.onEditingChanged = onEditingChanged
+        
+        allowRichText = false
+    }
+    
+    /// Makes a new TextView that supports `NSAttributedString`
+    /// - Parameters:
+    ///   - text: A binding to the attributed text
+    ///   - onEditingChanged: A closure that's called after an edit has been applied
+    ///   - onCommit: If this is provided, the field will automatically lose focus when the return key is pressed
+    init(
+        _ text: Binding<NSAttributedString>,
+        isFocusing: Binding<Bool>? = nil,
+        onEditingChanged: (() -> Void)? = nil,
+        onCommit: (() -> Void)? = nil
+    ) {
+        self.placeholderView = EmptyEquatableView()
+        _text = text
+        _isEmpty = Binding(
+            get: { text.wrappedValue.string.isEmpty },
+            set: { _ in }
+        )
+        
+        self.onCommit = onCommit
+        self.onEditingChanged = onEditingChanged
+        self.isFocusing = isFocusing
+        
+        allowRichText = true
+    }
 }
 
 final class UIKitTextView: UITextView {
-
+    
     override var keyCommands: [UIKeyCommand]? {
         return (super.keyCommands ?? []) + [
             UIKeyCommand(input: UIKeyCommand.inputEscape, modifierFlags: [], action: #selector(escape(_:)))
         ]
     }
-
+    
     @objc private func escape(_ sender: Any) {
         resignFirstResponder()
     }
-
+    
 }
 
-@available(iOS 17.0, *)
-struct RoundedTextView: View {
-    @State private var text: NSAttributedString = .init()
-
+struct EmptyEquatableView: View, Equatable {
     var body: some View {
-        VStack(alignment: .leading) {
-            TextView($text)
-                .padding(.leading, 25)
-
-            GeometryReader { _ in
-                TextView($text)
-                    .placeholder("Enter some text")
-                    .padding(10)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(lineWidth: 1)
-                            .foregroundColor(Color(.placeholderText))
-                    )
-                    .padding()
-            }
-            .background(Color(.systemBackground).edgesIgnoringSafeArea(.all))
-
-            Button {
-                text = NSAttributedString(string: "This is interesting", attributes: [
-                    .font: UIFont.preferredFont(forTextStyle: .headline)
-                ])
-            } label: {
-                Spacer()
-                Text("Interesting?")
-                Spacer()
-            }
-            .padding()
-        }
-    }
-}
-
-@available(iOS 17.0, *)
-struct TextView_Previews: PreviewProvider {
-    static var previews: some View {
-        RoundedTextView()
+        EmptyView()
     }
 }

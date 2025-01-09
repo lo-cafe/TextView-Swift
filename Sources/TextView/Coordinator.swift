@@ -9,6 +9,7 @@ extension TextView.Representable {
         private var originalText: NSAttributedString = .init()
         private var text: Binding<NSAttributedString>
         var calculatedHeight: Binding<CGFloat>
+        var isFocusing: Binding<Bool>? = nil
 
         var onCommit: (() -> Void)?
         var onEditingChanged: (() -> Void)?
@@ -35,6 +36,9 @@ extension TextView.Representable {
         }
 
         func textViewDidBeginEditing(_ textView: UITextView) {
+            if let isFocusing {
+                isFocusing.wrappedValue = true
+            }
             originalText = text.wrappedValue
         }
 
@@ -59,6 +63,9 @@ extension TextView.Representable {
             // this check is to ensure we always commit text when we're not using a closure
             if onCommit != nil {
                 text.wrappedValue = originalText
+            }
+            if let isFocusing {
+                isFocusing.wrappedValue = false
             }
         }
 
