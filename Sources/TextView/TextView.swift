@@ -2,29 +2,7 @@ import SwiftUI
 
 /// A SwiftUI TextView implementation that supports both scrolling and auto-sizing layouts
 @available(iOS 17.0, *)
-public struct TextView<PlaceholderView>: View, Equatable where PlaceholderView : Equatable, PlaceholderView : View {
-    public static func == (lhs: TextView, rhs: TextView) -> Bool {
-        lhs.placeholderView == rhs.placeholderView
-        && lhs.foregroundColor == rhs.foregroundColor
-        && lhs.autocapitalization == rhs.autocapitalization
-        && lhs.multilineTextAlignment == rhs.multilineTextAlignment
-        && lhs.font == rhs.font
-        && lhs.returnKeyType == rhs.returnKeyType
-        && lhs.clearsOnInsertion == rhs.clearsOnInsertion
-        && lhs.autocorrection == rhs.autocorrection
-        && lhs.truncationMode == rhs.truncationMode
-        && lhs.isEditable == rhs.isEditable
-        && lhs.isSelectable == rhs.isSelectable
-        && lhs.isScrollingEnabled == rhs.isScrollingEnabled
-        && lhs.enablesReturnKeyAutomatically == rhs.enablesReturnKeyAutomatically
-        && lhs.autoDetectionTypes == rhs.autoDetectionTypes
-        && lhs.allowRichText == rhs.allowRichText
-        && lhs.textViewInsets == rhs.textViewInsets
-        && lhs.maxHeightUntilForceScrolling == rhs.maxHeightUntilForceScrolling
-        
-    }
-    
-    
+public struct TextView<PlaceholderView>: View where PlaceholderView : Equatable, PlaceholderView : View {
     @Environment(\.layoutDirection) private var layoutDirection
     
     @Binding private var text: NSAttributedString
