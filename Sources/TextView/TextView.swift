@@ -9,6 +9,7 @@ public struct TextView<PlaceholderView>: View where PlaceholderView : Equatable,
     @Binding private var isEmpty: Bool
     
     @State private var calculatedHeight: CGFloat = 44
+    private var optionalCalculatedHeightBinding: Binding<Bool>?
     
     private var onEditingChanged: (() -> Void)?
     private var shouldEditInRange: ((Range<String.Index>, String) -> Bool)?
@@ -42,6 +43,7 @@ public struct TextView<PlaceholderView>: View where PlaceholderView : Equatable,
     public init(
         _ text: Binding<String>,
         @ViewBuilder placeholderView: @escaping () -> PlaceholderView,
+        optionalCalculatedHeightBinding: Binding<Bool>? = nil,
         isFocusing: Binding<Bool>? = nil,
         shouldEditInRange: ((Range<String.Index>, String) -> Bool)? = nil,
         onEditingChanged: (() -> Void)? = nil,
@@ -49,6 +51,7 @@ public struct TextView<PlaceholderView>: View where PlaceholderView : Equatable,
     ) {
         self.placeholderView = placeholderView()
         self.isFocusing = isFocusing
+        self.optionalCalculatedHeightBinding = optionalCalculatedHeightBinding
         _text = Binding(
             get: { NSAttributedString(string: text.wrappedValue) },
             set: { text.wrappedValue = $0.string }
@@ -74,6 +77,7 @@ public struct TextView<PlaceholderView>: View where PlaceholderView : Equatable,
     public init(
         _ text: Binding<NSAttributedString>,
         @ViewBuilder placeholderView: @escaping () -> PlaceholderView,
+        optionalCalculatedHeightBinding: Binding<Bool>? = nil,
         isFocusing: Binding<Bool>? = nil,
         onEditingChanged: (() -> Void)? = nil,
         onCommit: (() -> Void)? = nil
@@ -85,6 +89,7 @@ public struct TextView<PlaceholderView>: View where PlaceholderView : Equatable,
             set: { _ in }
         )
         
+        self.optionalCalculatedHeightBinding = optionalCalculatedHeightBinding
         self.onCommit = onCommit
         self.onEditingChanged = onEditingChanged
         self.isFocusing = isFocusing
@@ -97,9 +102,13 @@ public struct TextView<PlaceholderView>: View where PlaceholderView : Equatable,
             text: $text,
             calculatedHeight: Binding(
                 get: {
-                    calculatedHeight
+                    optionalCalculatedHeightBinding.wrappedValue ?? calculatedHeight
                 }, set: { newVal in
-                    calculatedHeight = newVal < maxHeightUntilForceScrolling ? newVal : maxHeightUntilForceScrolling
+                let newHeight = newVal < maxHeightUntilForceScrolling ? newVal : maxHeightUntilForceScrolling
+                if optionalCalculatedHeightBinding != nil {
+                    optionalCalculatedHeightBinding.wrappedValue = newHeight
+                }
+                    calculatedHeight = newHeight
                 }
             ),
             isFocusing: isFocusing,
