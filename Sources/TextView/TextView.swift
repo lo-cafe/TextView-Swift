@@ -102,11 +102,11 @@ public struct TextView<PlaceholderView>: View where PlaceholderView : Equatable,
             text: $text,
             calculatedHeight: Binding(
                 get: {
-                    optionalCalculatedHeightBinding.wrappedValue ?? calculatedHeight
+                    optionalCalculatedHeightBinding?.wrappedValue ?? calculatedHeight
                 }, set: { newVal in
                 let newHeight = newVal < maxHeightUntilForceScrolling ? newVal : maxHeightUntilForceScrolling
                 if optionalCalculatedHeightBinding != nil {
-                    optionalCalculatedHeightBinding.wrappedValue = newHeight
+                    optionalCalculatedHeightBinding?.wrappedValue = newHeight
                 }
                     calculatedHeight = newHeight
                 }
