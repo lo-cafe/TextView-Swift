@@ -9,7 +9,7 @@ public struct TextView<PlaceholderView>: View where PlaceholderView : Equatable,
     @Binding private var isEmpty: Bool
     
     @State private var calculatedHeight: CGFloat = 44
-    private var optionalCalculatedHeightBinding: Binding<Bool>?
+    private var optionalCalculatedHeightBinding: Binding<CGFloat>?
     
     private var onEditingChanged: (() -> Void)?
     private var shouldEditInRange: ((Range<String.Index>, String) -> Bool)?
@@ -43,7 +43,7 @@ public struct TextView<PlaceholderView>: View where PlaceholderView : Equatable,
     public init(
         _ text: Binding<String>,
         @ViewBuilder placeholderView: @escaping () -> PlaceholderView,
-        optionalCalculatedHeightBinding: Binding<Bool>? = nil,
+        optionalCalculatedHeightBinding: Binding<CGFloat>? = nil,
         isFocusing: Binding<Bool>? = nil,
         shouldEditInRange: ((Range<String.Index>, String) -> Bool)? = nil,
         onEditingChanged: (() -> Void)? = nil,
@@ -77,7 +77,7 @@ public struct TextView<PlaceholderView>: View where PlaceholderView : Equatable,
     public init(
         _ text: Binding<NSAttributedString>,
         @ViewBuilder placeholderView: @escaping () -> PlaceholderView,
-        optionalCalculatedHeightBinding: Binding<Bool>? = nil,
+        optionalCalculatedHeightBinding: Binding<CGFloat>? = nil,
         isFocusing: Binding<Bool>? = nil,
         onEditingChanged: (() -> Void)? = nil,
         onCommit: (() -> Void)? = nil
