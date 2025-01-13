@@ -118,6 +118,8 @@ extension TextView.Representable.Coordinator {
 
         recalculateHeight()
 
+        textView.setNeedsDisplay()
+
         textView.textContainerInset = UIEdgeInsets(
             top: representable.insets.top,
             left: representable.insets.leading,
@@ -129,7 +131,6 @@ extension TextView.Representable.Coordinator {
             y: oldContentOffset.y + topInsetDifference - bottomInsetDifference
         )
 
-        textView.setNeedsDisplay()
     }
 
     private func recalculateHeight() {
