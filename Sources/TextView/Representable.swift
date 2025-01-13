@@ -26,7 +26,6 @@ extension TextView {
         var shouldEditInRange: ((Range<String.Index>, String) -> Bool)?
         var onCommit: (() -> Void)?
         var insets: EdgeInsets = .init()
-        var maxHeight: CGFloat = .infinity
 
         func makeUIView(context: Context) -> UIKitTextView {
             context.coordinator.textView

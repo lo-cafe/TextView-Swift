@@ -77,6 +77,8 @@ extension TextView.Representable {
 extension TextView.Representable.Coordinator {
 
     func update(representable: TextView.Representable) {
+        let oldInsets = textView.textContainerInset
+        
         textView.attributedText = representable.text
         textView.font = representable.font
         textView.adjustsFontForContentSizeCategory = true
@@ -110,15 +112,20 @@ extension TextView.Representable.Coordinator {
             textView.returnKeyType = onCommit == nil ? .default : .done
         }
 
-        // if !representable.isScrollingEnabled {
-            textView.textContainer.lineFragmentPadding = 0
-            textView.textContainerInset = UIEdgeInsets(
-                top: representable.insets.top, 
-                left: representable.insets.leading, 
-                bottom: representable.insets.bottom, 
-                right: representable.insets.trailing
-            )
-        // }
+        textView.textContainer.lineFragmentPadding = 0
+        
+        let newInsets = UIEdgeInsets(
+            top: representable.insets.top,
+            left: representable.insets.leading,
+            bottom: representable.insets.bottom,
+            right: representable.insets.trailing
+        )
+        
+        let oldOffset = textView.contentOffset
+        let insetsDiff = (newInsets.top - oldInsets.top) - (newInsets.bottom - oldInsets.bottom)
+        
+        textView.textContainerInset = newInsets
+        textView.contentOffset = CGPoint(x: oldOffset.x, y: oldOffset.y - insetsDiff)
 
         recalculateHeight()
         textView.setNeedsDisplay()
