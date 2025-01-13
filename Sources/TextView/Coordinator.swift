@@ -14,6 +14,7 @@ extension TextView.Representable {
         var onCommit: (() -> Void)?
         var onEditingChanged: (() -> Void)?
         var shouldEditInRange: ((Range<String.Index>, String) -> Bool)?
+        var representable: TextView.Representable?
 
         init(text: Binding<NSAttributedString>,
              calculatedHeight: Binding<CGFloat>,
@@ -60,7 +61,6 @@ extension TextView.Representable {
         }
 
         func textViewDidEndEditing(_ textView: UITextView) {
-            // this check is to ensure we always commit text when we're not using a closure
             if onCommit != nil {
                 text.wrappedValue = originalText
             }
@@ -69,14 +69,51 @@ extension TextView.Representable {
             }
         }
 
-    }
+        func scrollViewDidScroll(_ scrollView: UIScrollView) {
+            adjustContentOffsetForInsetsChange()
+        }
 
+        private func adjustContentOffsetForInsetsChange() {
+            guard let representable = representable else { return }
+
+            let currentInsets = textView.textContainerInset
+            let desiredInsets = UIEdgeInsets(
+                top: representable.insets.top,
+                left: representable.insets.leading,
+                bottom: representable.insets.bottom,
+                right: representable.insets.trailing
+            )
+
+            if currentInsets.top != desiredInsets.top || currentInsets.bottom != desiredInsets.bottom {
+                let topInsetDifference = desiredInsets.top - currentInsets.top
+                let bottomInsetDifference = desiredInsets.bottom - currentInsets.bottom
+                let oldContentOffset = textView.contentOffset
+
+                textView.textContainerInset = desiredInsets
+                textView.contentOffset = CGPoint(
+                    x: oldContentOffset.x,
+                    y: oldContentOffset.y + topInsetDifference - bottomInsetDifference
+                )
+            }
+        }
+
+        private func recalculateHeight() {
+            let newSize = textView.sizeThatFits(CGSize(width: textView.frame.width, height: .greatestFiniteMagnitude))
+            guard calculatedHeight.wrappedValue != newSize.height else { return }
+
+            DispatchQueue.main.async {
+                self.calculatedHeight.wrappedValue = newSize.height
+            }
+        }
+    }
 }
 
 @available(iOS 17.0, *)
 extension TextView.Representable.Coordinator {
 
     func update(representable: TextView.Representable) {
+        self.representable = representable
+
         textView.attributedText = representable.text
         textView.font = representable.font
         textView.adjustsFontForContentSizeCategory = true
@@ -91,9 +128,9 @@ extension TextView.Representable.Coordinator {
 
         switch representable.multilineTextAlignment {
         case .leading:
-            textView.textAlignment = textView.traitCollection.layoutDirection ~= .leftToRight ? .left : .right
+            textView.textAlignment = textView.traitCollection.layoutDirection == .leftToRight ? .left : .right
         case .trailing:
-            textView.textAlignment = textView.traitCollection.layoutDirection ~= .leftToRight ? .right : .left
+            textView.textAlignment = textView.traitCollection.layoutDirection == .leftToRight ? .right : .left
         case .center:
             textView.textAlignment = .center
         }
@@ -112,34 +149,7 @@ extension TextView.Representable.Coordinator {
 
         textView.textContainer.lineFragmentPadding = 0
 
-        let oldContentOffset = textView.contentOffset
-        let topInsetDifference = representable.insets.top - textView.textContainerInset.top
-        let bottomInsetDifference = representable.insets.bottom - textView.textContainerInset.bottom
-
         recalculateHeight()
-
         textView.setNeedsDisplay()
-
-        textView.textContainerInset = UIEdgeInsets(
-            top: representable.insets.top,
-            left: representable.insets.leading,
-            bottom: representable.insets.bottom,
-            right: representable.insets.trailing
-        )
-        textView.contentOffset = CGPoint(
-            x: oldContentOffset.x,
-            y: oldContentOffset.y + topInsetDifference - bottomInsetDifference
-        )
-
     }
-
-    private func recalculateHeight() {
-        let newSize = textView.sizeThatFits(CGSize(width: textView.frame.width, height: .greatestFiniteMagnitude))
-        guard calculatedHeight.wrappedValue != newSize.height else { return }
-
-        DispatchQueue.main.async { // call in next render cycle.
-            self.calculatedHeight.wrappedValue = newSize.height
-        }
-    }
-
 }
