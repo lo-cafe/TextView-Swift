@@ -110,7 +110,7 @@ extension TextView.Representable.Coordinator {
             textView.returnKeyType = onCommit == nil ? .default : .done
         }
 
-        if !representable.isScrollingEnabled {
+        // if !representable.isScrollingEnabled {
             textView.textContainer.lineFragmentPadding = 0
             textView.textContainerInset = UIEdgeInsets(
                 top: representable.insets.top, 
@@ -118,7 +118,7 @@ extension TextView.Representable.Coordinator {
                 bottom: representable.insets.bottom, 
                 right: representable.insets.trailing
             )
-        }
+        // }
 
         recalculateHeight()
         textView.setNeedsDisplay()
