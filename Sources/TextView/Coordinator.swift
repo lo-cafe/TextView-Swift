@@ -115,6 +115,9 @@ extension TextView.Representable.Coordinator {
         let oldContentOffset = textView.contentOffset
         let topInsetDifference = representable.insets.top - textView.textContainerInset.top
         let bottomInsetDifference = representable.insets.bottom - textView.textContainerInset.bottom
+
+        recalculateHeight()
+
         textView.textContainerInset = UIEdgeInsets(
             top: representable.insets.top,
             left: representable.insets.leading,
@@ -126,7 +129,6 @@ extension TextView.Representable.Coordinator {
             y: oldContentOffset.y + topInsetDifference - bottomInsetDifference
         )
 
-        recalculateHeight()
         textView.setNeedsDisplay()
     }
 
