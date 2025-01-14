@@ -49,8 +49,8 @@ extension TextView.Representable {
         }
 
         func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
-            if onCommit != nil, text == "\n" {
-                onCommit?()
+            if let onCommit, text == "\n" {
+                onCommit()
                 originalText = NSAttributedString(attributedString: textView.attributedText)
                 textView.resignFirstResponder()
                 return false
@@ -110,13 +110,19 @@ extension TextView.Representable.Coordinator {
             textView.returnKeyType = onCommit == nil ? .default : .done
         }
 
-        // textView.textContainer.lineFragmentPadding = 0
-        textView.textContainerInset = UIEdgeInsets(
-            top: representable.insets.top, 
-            left: representable.insets.leading, 
-            bottom: representable.insets.bottom, 
-            right: representable.insets.trailing
-        )
+        textView.textContainer.lineFragmentPadding = 0
+
+        if textView.textContainerInset.top != representable.insets.top ||
+            textView.textContainerInset.left != representable.insets.leading ||
+            textView.textContainerInset.bottom != representable.insets.bottom ||
+            textView.textContainerInset.right != representable.insets.trailing {
+            textView.textContainerInset = UIEdgeInsets(
+                top: representable.insets.top,
+                left: representable.insets.leading,
+                bottom: representable.insets.bottom,
+                right: representable.insets.trailing
+            )
+        }
 
         recalculateHeight()
         textView.setNeedsDisplay()

@@ -33,6 +33,7 @@ public struct TextView<PlaceholderView>: View where PlaceholderView : Equatable,
     var allowRichText: Bool
     var textViewInsets: EdgeInsets = .init()
     var maxHeightUntilForceScrolling: CGFloat = .infinity
+    var preventSelectingText: Bool
     
     /// Makes a new TextView with the specified configuration
     /// - Parameters:
@@ -47,7 +48,8 @@ public struct TextView<PlaceholderView>: View where PlaceholderView : Equatable,
         isFocusing: Binding<Bool>? = nil,
         shouldEditInRange: ((Range<String.Index>, String) -> Bool)? = nil,
         onEditingChanged: (() -> Void)? = nil,
-        onCommit: (() -> Void)? = nil
+        onCommit: (() -> Void)? = nil,
+        preventSelectingText: Bool = false
     ) {
         self.placeholderView = placeholderView()
         self.isFocusing = isFocusing
@@ -65,6 +67,7 @@ public struct TextView<PlaceholderView>: View where PlaceholderView : Equatable,
         self.onCommit = onCommit
         self.shouldEditInRange = shouldEditInRange
         self.onEditingChanged = onEditingChanged
+        self.preventSelectingText = preventSelectingText
         
         allowRichText = false
     }
@@ -76,11 +79,13 @@ public struct TextView<PlaceholderView>: View where PlaceholderView : Equatable,
     ///   - onCommit: If this is provided, the field will automatically lose focus when the return key is pressed
     public init(
         _ text: Binding<NSAttributedString>,
+        allowRichText: Bool = true,
         @ViewBuilder placeholderView: @escaping () -> PlaceholderView,
         optionalCalculatedHeightBinding: Binding<CGFloat>? = nil,
         isFocusing: Binding<Bool>? = nil,
         onEditingChanged: (() -> Void)? = nil,
-        onCommit: (() -> Void)? = nil
+        onCommit: (() -> Void)? = nil,
+        preventSelectingText: Bool = false
     ) {
         self.placeholderView = placeholderView()
         _text = text
@@ -93,24 +98,35 @@ public struct TextView<PlaceholderView>: View where PlaceholderView : Equatable,
         self.onCommit = onCommit
         self.onEditingChanged = onEditingChanged
         self.isFocusing = isFocusing
+        self.preventSelectingText = preventSelectingText
         
-        allowRichText = true
+        self.allowRichText = allowRichText
+    }
+    
+    var actualCalculatedHeight: CGFloat { optionalCalculatedHeightBinding?.wrappedValue ?? calculatedHeight }
+    
+    var calculatedHeightBinding: Binding<CGFloat> {
+        Binding(
+            get: {
+                actualCalculatedHeight
+            }, set: { newVal in
+                let newHeight = newVal < maxHeightUntilForceScrolling ? newVal : maxHeightUntilForceScrolling
+                let oldHeight = actualCalculatedHeight
+                if oldHeight != newHeight {
+                    if optionalCalculatedHeightBinding != nil  {
+                        optionalCalculatedHeightBinding?.wrappedValue = newHeight
+                    } else {
+                        calculatedHeight = newHeight
+                    }
+                }
+            }
+        )
     }
     
     public var body: some View {
         Representable(
             text: $text,
-            calculatedHeight: Binding(
-                get: {
-                    optionalCalculatedHeightBinding?.wrappedValue ?? calculatedHeight
-                }, set: { newVal in
-                let newHeight = newVal < maxHeightUntilForceScrolling ? newVal : maxHeightUntilForceScrolling
-                if optionalCalculatedHeightBinding != nil {
-                    optionalCalculatedHeightBinding?.wrappedValue = newHeight
-                }
-                    calculatedHeight = newHeight
-                }
-            ),
+            calculatedHeight: calculatedHeightBinding,
             isFocusing: isFocusing,
             foregroundColor: foregroundColor,
             autocapitalization: autocapitalization,
@@ -122,28 +138,30 @@ public struct TextView<PlaceholderView>: View where PlaceholderView : Equatable,
             truncationMode: truncationMode,
             isEditable: isEditable,
             isSelectable: isSelectable,
-            isScrollingEnabled: calculatedHeight >= maxHeightUntilForceScrolling ? true : isScrollingEnabled,
+            isScrollingEnabled: actualCalculatedHeight >= maxHeightUntilForceScrolling ? true : isScrollingEnabled,
             enablesReturnKeyAutomatically: enablesReturnKeyAutomatically,
             autoDetectionTypes: autoDetectionTypes,
             allowsRichText: allowRichText,
             onEditingChanged: onEditingChanged,
             shouldEditInRange: shouldEditInRange,
             onCommit: onCommit,
-            insets: textViewInsets
+            insets: textViewInsets,
+            preventSelectingText: preventSelectingText
         )
         .frame(
-            minHeight: isScrollingEnabled ? 0 : calculatedHeight,
-            maxHeight: min(maxHeightUntilForceScrolling, isScrollingEnabled ? .infinity : calculatedHeight)
+            minHeight: isScrollingEnabled ? 0 : actualCalculatedHeight,
+            maxHeight: min(maxHeightUntilForceScrolling, isScrollingEnabled ? .infinity : actualCalculatedHeight)
         )
         .background(
-            placeholderView
-                .foregroundColor(Color(.placeholderText))
-                .multilineTextAlignment(multilineTextAlignment)
-                .font(Font(font))
-                .padding(.horizontal, isScrollingEnabled ? 5 : 0)
-                .padding(.vertical, isScrollingEnabled ? 8 : 0)
-                .opacity(isEmpty ? 1 : 0),
-            alignment: .topLeading
+            ZStack {
+                placeholderView
+                    .foregroundColor(Color(.placeholderText))
+                    .multilineTextAlignment(multilineTextAlignment)
+                    .font(Font(font))
+                    .opacity(isEmpty ? 1 : 0)
+            }
+                .animation(.default, value: isEmpty),
+            alignment: .top
         )
     }
     
@@ -162,7 +180,8 @@ extension TextView where PlaceholderView == EmptyEquatableView {
         isFocusing: Binding<Bool>? = nil,
         shouldEditInRange: ((Range<String.Index>, String) -> Bool)? = nil,
         onEditingChanged: (() -> Void)? = nil,
-        onCommit: (() -> Void)? = nil
+        onCommit: (() -> Void)? = nil,
+        preventSelectingText: Bool = false
     ) {
         self.placeholderView = EmptyEquatableView()
         self.isFocusing = isFocusing
@@ -179,6 +198,7 @@ extension TextView where PlaceholderView == EmptyEquatableView {
         self.onCommit = onCommit
         self.shouldEditInRange = shouldEditInRange
         self.onEditingChanged = onEditingChanged
+        self.preventSelectingText = preventSelectingText
         
         allowRichText = false
     }
@@ -192,7 +212,8 @@ extension TextView where PlaceholderView == EmptyEquatableView {
         _ text: Binding<NSAttributedString>,
         isFocusing: Binding<Bool>? = nil,
         onEditingChanged: (() -> Void)? = nil,
-        onCommit: (() -> Void)? = nil
+        onCommit: (() -> Void)? = nil,
+        preventSelectingText: Bool = false
     ) {
         self.placeholderView = EmptyEquatableView()
         _text = text
@@ -204,6 +225,7 @@ extension TextView where PlaceholderView == EmptyEquatableView {
         self.onCommit = onCommit
         self.onEditingChanged = onEditingChanged
         self.isFocusing = isFocusing
+        self.preventSelectingText = preventSelectingText
         
         allowRichText = true
     }
