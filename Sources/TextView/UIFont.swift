@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 public extension UIFont {
     static var caption2: UIFont = .preferredFont(forTextStyle: .caption2)

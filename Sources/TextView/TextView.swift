@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// A SwiftUI TextView implementation that supports both scrolling and auto-sizing layouts
 @available(iOS 17.0, *)

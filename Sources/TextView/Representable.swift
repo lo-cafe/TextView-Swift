@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 @available(iOS 17.0, *)
 extension TextView {
