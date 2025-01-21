@@ -150,8 +150,8 @@ public struct TextView<PlaceholderView>: View where PlaceholderView : Equatable,
             preventSelectingText: preventSelectingText
         )
         .frame(
-            minHeight: isScrollingEnabled ? 0 : actualCalculatedHeight,
-            maxHeight: min(maxHeightUntilForceScrolling, isScrollingEnabled ? .infinity : actualCalculatedHeight)
+            minHeight: isScrollingEnabled ? 0 : round(actualCalculatedHeight),
+            maxHeight: min(ceil(maxHeightUntilForceScrolling), isScrollingEnabled ? .infinity : round(actualCalculatedHeight))
         )
         .background(
             ZStack {
@@ -233,7 +233,6 @@ extension TextView where PlaceholderView == EmptyEquatableView {
 }
 
 final class UIKitTextView: UITextView {
-    
     override var keyCommands: [UIKeyCommand]? {
         return (super.keyCommands ?? []) + [
             UIKeyCommand(input: UIKeyCommand.inputEscape, modifierFlags: [], action: #selector(escape(_:)))
@@ -243,7 +242,6 @@ final class UIKitTextView: UITextView {
     @objc private func escape(_ sender: Any) {
         resignFirstResponder()
     }
-    
 }
 
 struct EmptyEquatableView: View, Equatable {

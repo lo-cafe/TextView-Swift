@@ -48,7 +48,13 @@ extension TextView {
         var preventSelectingText: Bool = false
 
         func makeUIView(context: Context) -> UIKitTextView {
-            context.coordinator.textView
+            let textView = UIKitTextView()
+            textView.backgroundColor = .clear
+            textView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+            textView.delegate = context.coordinator
+
+            context.coordinator.textView = textView
+            return textView
         }
 
         func updateUIView(_ uiView: UIKitTextView, context: Context) {
