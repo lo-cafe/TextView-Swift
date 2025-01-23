@@ -12,14 +12,6 @@ public extension TextView {
         return view
     }
 
-    /// Specify a max value for up to which the text view will grow until it starts scrolling
-    /// - Parameter maxHeight: The maximum height
-    func maxHeight(_ maxHeight: CGFloat) -> TextView {
-        var view = self
-        view.maxHeightUntilForceScrolling = maxHeight
-        return view
-    }
-
     /// Specify an inset value for the text view
     /// - Parameter insets: An EdgeInset value
     func insets(_ insets: EdgeInsets) -> TextView {

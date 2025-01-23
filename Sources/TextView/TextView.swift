@@ -8,6 +8,7 @@ public struct TextView<PlaceholderView>: View where PlaceholderView : Equatable,
     
     @Binding private var text: NSAttributedString
     @Binding private var isEmpty: Bool
+    @Binding private var isFocusing: Bool
     
     @State private var calculatedHeight: CGFloat = 44
     private var optionalCalculatedHeightBinding: Binding<CGFloat>?
@@ -16,7 +17,6 @@ public struct TextView<PlaceholderView>: View where PlaceholderView : Equatable,
     private var shouldEditInRange: ((Range<String.Index>, String) -> Bool)?
     private var onCommit: (() -> Void)?
     
-    var isFocusing: Binding<Bool>?
     var placeholderView: PlaceholderView
     var foregroundColor: UIColor = .label
     var autocapitalization: UITextAutocapitalizationType = .sentences
@@ -33,8 +33,7 @@ public struct TextView<PlaceholderView>: View where PlaceholderView : Equatable,
     var autoDetectionTypes: UIDataDetectorTypes = []
     var allowRichText: Bool
     var textViewInsets: EdgeInsets = .init()
-    var maxHeightUntilForceScrolling: CGFloat = .infinity
-    var preventSelectingText: Bool
+    var unselectText: Bool
     
     /// Makes a new TextView with the specified configuration
     /// - Parameters:
@@ -50,10 +49,10 @@ public struct TextView<PlaceholderView>: View where PlaceholderView : Equatable,
         shouldEditInRange: ((Range<String.Index>, String) -> Bool)? = nil,
         onEditingChanged: (() -> Void)? = nil,
         onCommit: (() -> Void)? = nil,
-        preventSelectingText: Bool = false
+        unselectText: Bool = false
     ) {
         self.placeholderView = placeholderView()
-        self.isFocusing = isFocusing
+        self._isFocusing = isFocusing ?? .init(get: { false }, set: { _ in })
         self.optionalCalculatedHeightBinding = calculatedHeightBinding
         _text = Binding(
             get: { NSAttributedString(string: text.wrappedValue) },
@@ -68,7 +67,7 @@ public struct TextView<PlaceholderView>: View where PlaceholderView : Equatable,
         self.onCommit = onCommit
         self.shouldEditInRange = shouldEditInRange
         self.onEditingChanged = onEditingChanged
-        self.preventSelectingText = preventSelectingText
+        self.unselectText = unselectText
         
         allowRichText = false
     }
@@ -86,7 +85,7 @@ public struct TextView<PlaceholderView>: View where PlaceholderView : Equatable,
         isFocusing: Binding<Bool>? = nil,
         onEditingChanged: (() -> Void)? = nil,
         onCommit: (() -> Void)? = nil,
-        preventSelectingText: Bool = false
+        unselectText: Bool = false
     ) {
         self.placeholderView = placeholderView()
         _text = text
@@ -98,37 +97,19 @@ public struct TextView<PlaceholderView>: View where PlaceholderView : Equatable,
         self.optionalCalculatedHeightBinding = calculatedHeightBinding
         self.onCommit = onCommit
         self.onEditingChanged = onEditingChanged
-        self.isFocusing = isFocusing
-        self.preventSelectingText = preventSelectingText
+        self._isFocusing = isFocusing ?? .init(get: { false }, set: { _ in })
+        self.unselectText = unselectText
         
         self.allowRichText = allowRichText
     }
     
-    var actualCalculatedHeight: CGFloat { optionalCalculatedHeightBinding?.wrappedValue ?? calculatedHeight }
-    
-    var calculatedHeightBinding: Binding<CGFloat> {
-        Binding(
-            get: {
-                actualCalculatedHeight
-            }, set: { newVal in
-                let newHeight = newVal < maxHeightUntilForceScrolling ? newVal : maxHeightUntilForceScrolling
-                let oldHeight = actualCalculatedHeight
-                if oldHeight != newHeight {
-                    if optionalCalculatedHeightBinding != nil  {
-                        optionalCalculatedHeightBinding?.wrappedValue = newHeight
-                    } else {
-                        calculatedHeight = newHeight
-                    }
-                }
-            }
-        )
-    }
+    var actualCalculatedHeight: Binding<CGFloat> { optionalCalculatedHeightBinding ?? $calculatedHeight }
     
     public var body: some View {
         Representable(
             text: $text,
-            calculatedHeight: calculatedHeightBinding,
-            isFocusing: isFocusing,
+            calculatedHeight: actualCalculatedHeight,
+            isFocusing: $isFocusing,
             foregroundColor: foregroundColor,
             autocapitalization: autocapitalization,
             multilineTextAlignment: multilineTextAlignment,
@@ -139,7 +120,7 @@ public struct TextView<PlaceholderView>: View where PlaceholderView : Equatable,
             truncationMode: truncationMode,
             isEditable: isEditable,
             isSelectable: isSelectable,
-            isScrollingEnabled: actualCalculatedHeight >= maxHeightUntilForceScrolling ? true : isScrollingEnabled,
+            isScrollingEnabled: isScrollingEnabled,
             enablesReturnKeyAutomatically: enablesReturnKeyAutomatically,
             autoDetectionTypes: autoDetectionTypes,
             allowsRichText: allowRichText,
@@ -147,23 +128,17 @@ public struct TextView<PlaceholderView>: View where PlaceholderView : Equatable,
             shouldEditInRange: shouldEditInRange,
             onCommit: onCommit,
             insets: textViewInsets,
-            preventSelectingText: preventSelectingText
+            unselectText: unselectText
         )
-        .frame(
-            minHeight: isScrollingEnabled ? 0 : round(actualCalculatedHeight),
-            maxHeight: min(ceil(maxHeightUntilForceScrolling), isScrollingEnabled ? .infinity : round(actualCalculatedHeight))
-        )
-        .background(
-            ZStack {
-                placeholderView
-                    .foregroundColor(Color(.placeholderText))
-                    .multilineTextAlignment(multilineTextAlignment)
-                    .font(Font(font))
-                    .opacity(isEmpty ? 1 : 0)
-            }
-                .animation(.default, value: isEmpty),
-            alignment: .top
-        )
+        .background(alignment: .top) {
+            placeholderView
+                .foregroundColor(Color(.placeholderText))
+                .multilineTextAlignment(multilineTextAlignment)
+                .font(Font(font))
+                .opacity(isEmpty ? 1 : 0)
+                .allowsHitTesting(false)
+                .transaction { $0.animation = nil }
+        }
     }
     
 }
@@ -182,10 +157,10 @@ extension TextView where PlaceholderView == EmptyEquatableView {
         shouldEditInRange: ((Range<String.Index>, String) -> Bool)? = nil,
         onEditingChanged: (() -> Void)? = nil,
         onCommit: (() -> Void)? = nil,
-        preventSelectingText: Bool = false
+        unselectText: Bool = false
     ) {
         self.placeholderView = EmptyEquatableView()
-        self.isFocusing = isFocusing
+        self._isFocusing = isFocusing ?? .init(get: { false }, set: { _ in })
         _text = Binding(
             get: { NSAttributedString(string: text.wrappedValue) },
             set: { text.wrappedValue = $0.string }
@@ -199,7 +174,7 @@ extension TextView where PlaceholderView == EmptyEquatableView {
         self.onCommit = onCommit
         self.shouldEditInRange = shouldEditInRange
         self.onEditingChanged = onEditingChanged
-        self.preventSelectingText = preventSelectingText
+        self.unselectText = unselectText
         
         allowRichText = false
     }
@@ -214,7 +189,7 @@ extension TextView where PlaceholderView == EmptyEquatableView {
         isFocusing: Binding<Bool>? = nil,
         onEditingChanged: (() -> Void)? = nil,
         onCommit: (() -> Void)? = nil,
-        preventSelectingText: Bool = false
+        unselectText: Bool = false
     ) {
         self.placeholderView = EmptyEquatableView()
         _text = text
@@ -225,8 +200,8 @@ extension TextView where PlaceholderView == EmptyEquatableView {
         
         self.onCommit = onCommit
         self.onEditingChanged = onEditingChanged
-        self.isFocusing = isFocusing
-        self.preventSelectingText = preventSelectingText
+        self._isFocusing = isFocusing ?? .init(get: { false }, set: { _ in })
+        self.unselectText = unselectText
         
         allowRichText = true
     }

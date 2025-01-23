@@ -34,7 +34,9 @@ extension TextView.Representable {
         
         func textViewDidBeginEditing(_ textView: UITextView) {
             if let isFocusing {
-                isFocusing.wrappedValue = true
+                DispatchQueue.main.async {
+                    isFocusing.wrappedValue = true
+                }
             }
             originalText = text.wrappedValue
         }

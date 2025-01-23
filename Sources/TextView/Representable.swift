@@ -6,27 +6,29 @@ extension TextView {
     struct Representable: UIViewRepresentable, Equatable {
         static func == (lhs: TextView<PlaceholderView>.Representable, rhs: TextView<PlaceholderView>.Representable) -> Bool {
             return lhs.foregroundColor == rhs.foregroundColor &&
-                lhs.autocapitalization == rhs.autocapitalization &&
-                lhs.multilineTextAlignment == rhs.multilineTextAlignment &&
-                lhs.font == rhs.font &&
-                lhs.returnKeyType == rhs.returnKeyType &&
-                lhs.clearsOnInsertion == rhs.clearsOnInsertion &&
-                lhs.autocorrection == rhs.autocorrection &&
-                lhs.truncationMode == rhs.truncationMode &&
-                lhs.isEditable == rhs.isEditable &&
-                lhs.isSelectable == rhs.isSelectable &&
-                lhs.isScrollingEnabled == rhs.isScrollingEnabled &&
-                lhs.enablesReturnKeyAutomatically == rhs.enablesReturnKeyAutomatically &&
-                lhs.autoDetectionTypes == rhs.autoDetectionTypes &&
-                lhs.allowsRichText == rhs.allowsRichText &&
-                lhs.insets == rhs.insets &&
-                lhs.preventSelectingText == rhs.preventSelectingText
+            lhs._text.wrappedValue == rhs._text.wrappedValue &&
+            lhs._calculatedHeight.wrappedValue == rhs._calculatedHeight.wrappedValue &&
+            lhs._isFocusing.wrappedValue == rhs._isFocusing.wrappedValue &&
+            lhs.autocapitalization == rhs.autocapitalization &&
+            lhs.multilineTextAlignment == rhs.multilineTextAlignment &&
+            lhs.font == rhs.font &&
+            lhs.returnKeyType == rhs.returnKeyType &&
+            lhs.clearsOnInsertion == rhs.clearsOnInsertion &&
+            lhs.autocorrection == rhs.autocorrection &&
+            lhs.truncationMode == rhs.truncationMode &&
+            lhs.isEditable == rhs.isEditable &&
+            lhs.isSelectable == rhs.isSelectable &&
+            lhs.isScrollingEnabled == rhs.isScrollingEnabled &&
+            lhs.enablesReturnKeyAutomatically == rhs.enablesReturnKeyAutomatically &&
+            lhs.autoDetectionTypes == rhs.autoDetectionTypes &&
+            lhs.allowsRichText == rhs.allowsRichText &&
+            lhs.insets == rhs.insets &&
+            lhs.unselectText == rhs.unselectText
         }
         
         @Binding var text: NSAttributedString
         @Binding var calculatedHeight: CGFloat
-        
-        var isFocusing: Binding<Bool>? = nil
+        @Binding var isFocusing: Bool
         let foregroundColor: UIColor
         let autocapitalization: UITextAutocapitalizationType
         var multilineTextAlignment: TextAlignment
@@ -45,26 +47,30 @@ extension TextView {
         var shouldEditInRange: ((Range<String.Index>, String) -> Bool)?
         var onCommit: (() -> Void)?
         var insets: EdgeInsets = .init()
-        var preventSelectingText: Bool = false
-
+        var unselectText: Bool = false
+        
         func makeUIView(context: Context) -> UIKitTextView {
             let textView = UIKitTextView()
             textView.backgroundColor = .clear
             textView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
             textView.delegate = context.coordinator
-
+            
             context.coordinator.textView = textView
             return textView
         }
-
-        func updateUIView(_ uiView: UIKitTextView, context: Context) {
-            let selectedRange = uiView.selectedRange
+        
+        func updateUIView(_ textView: UIKitTextView, context: Context) {
+            let selectedRange = textView.selectedRange
             context.coordinator.update(representable: self)
             context.coordinator.calculatedHeight = self.$calculatedHeight
-            context.coordinator.isFocusing = self.isFocusing
-            uiView.selectedRange = preventSelectingText ? .init() : selectedRange
+            context.coordinator.isFocusing = self._isFocusing
+            if isFocusing == true && !textView.isFirstResponder {
+                print("Becoming first responder")
+                textView.becomeFirstResponder()
+            }
+            textView.selectedRange = unselectText ? .init(location: selectedRange.lowerBound, length: 0) : selectedRange
         }
-
+        
         @discardableResult func makeCoordinator() -> Coordinator {
             Coordinator(
                 text: $text,
@@ -74,7 +80,7 @@ extension TextView {
                 onCommit: onCommit
             )
         }
-
+        
     }
 }
 
