@@ -208,6 +208,14 @@ extension TextView where PlaceholderView == EmptyEquatableView {
 }
 
 final class UIKitTextView: UITextView {
+    override func resignFirstResponder() -> Bool {
+        let didResign = super.resignFirstResponder()
+        if didResign {
+            self.delegate?.textViewDidEndEditing?(self)
+        }
+        return didResign
+    }
+    
     override var keyCommands: [UIKeyCommand]? {
         return (super.keyCommands ?? []) + [
             UIKeyCommand(input: UIKeyCommand.inputEscape, modifierFlags: [], action: #selector(escape(_:)))

@@ -61,10 +61,15 @@ extension TextView.Representable {
         func textViewDidEndEditing(_ textView: UITextView) {
             // this check is to ensure we always commit text when we're not using a closure
             if onCommit != nil {
-                text.wrappedValue = originalText
+                DispatchQueue.main.async {
+                    self.text.wrappedValue = self.originalText
+                }
             }
-            if let isFocusing {
-                isFocusing.wrappedValue = false
+
+            if let isFocusing, isFocusing.wrappedValue {
+                DispatchQueue.main.async {
+                    isFocusing.wrappedValue = false
+                }
             }
         }
         
