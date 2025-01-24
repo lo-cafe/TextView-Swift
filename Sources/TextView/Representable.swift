@@ -64,13 +64,13 @@ extension TextView {
             context.coordinator.update(representable: self)
             context.coordinator.calculatedHeight = self.$calculatedHeight
             context.coordinator.isFocusing = self._isFocusing
-            if isFocusing && !textView.isFirstResponder {
-                DispatchQueue.main.async {
+            DispatchQueue.main.async {
+                if isFocusing && !textView.isFirstResponder {
                     textView.becomeFirstResponder()
-                }
-            } else if !isFocusing && textView.isFirstResponder {
-                DispatchQueue.main.async {
-                    textView.resignFirstResponder()
+                } else if !isFocusing && textView.isFirstResponder {
+                    DispatchQueue.main.async {
+                        textView.resignFirstResponder()
+                    }
                 }
             }
             textView.selectedRange = unselectText ? .init(location: selectedRange.lowerBound, length: 0) : selectedRange
