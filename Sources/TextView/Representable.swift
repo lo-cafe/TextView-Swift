@@ -26,7 +26,7 @@ extension TextView {
             lhs.unselectText == rhs.unselectText
         }
         
-        @Binding var text: NSAttributedString
+        @Binding var text: AttributedString
         @Binding var calculatedHeight: CGFloat
         @Binding var isFocusing: Bool
         let foregroundColor: UIColor

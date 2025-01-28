@@ -6,7 +6,7 @@ import UIKit
 public struct TextView<PlaceholderView>: View where PlaceholderView : Equatable, PlaceholderView : View {
     @Environment(\.layoutDirection) private var layoutDirection
     
-    @Binding private var text: NSAttributedString
+    @Binding private var text: AttributedString
     @Binding private var isEmpty: Bool
     @Binding private var isFocusing: Bool
     
@@ -35,50 +35,13 @@ public struct TextView<PlaceholderView>: View where PlaceholderView : Equatable,
     var textViewInsets: EdgeInsets = .init()
     var unselectText: Bool
     
-    /// Makes a new TextView with the specified configuration
-    /// - Parameters:
-    ///   - text: A binding to the text
-    ///   - shouldEditInRange: A closure that's called before an edit it applied, allowing the consumer to prevent the change
-    ///   - onEditingChanged: A closure that's called after an edit has been applied
-    ///   - onCommit: If this is provided, the field will automatically lose focus when the return key is pressed
-    public init(
-        _ text: Binding<String>,
-        @ViewBuilder placeholderView: @escaping () -> PlaceholderView,
-        calculatedHeightBinding: Binding<CGFloat>,
-        isFocusing: Binding<Bool>? = nil,
-        shouldEditInRange: ((Range<String.Index>, String) -> Bool)? = nil,
-        onEditingChanged: (() -> Void)? = nil,
-        onCommit: (() -> Void)? = nil,
-        unselectText: Bool = false
-    ) {
-        self.placeholderView = placeholderView()
-        self._isFocusing = isFocusing ?? .init(get: { false }, set: { _ in })
-        self.optionalCalculatedHeightBinding = calculatedHeightBinding
-        _text = Binding(
-            get: { NSAttributedString(string: text.wrappedValue) },
-            set: { text.wrappedValue = $0.string }
-        )
-        
-        _isEmpty = Binding(
-            get: { text.wrappedValue.isEmpty },
-            set: { _ in }
-        )
-        
-        self.onCommit = onCommit
-        self.shouldEditInRange = shouldEditInRange
-        self.onEditingChanged = onEditingChanged
-        self.unselectText = unselectText
-        
-        allowRichText = false
-    }
-    
-    /// Makes a new TextView that supports `NSAttributedString`
+    /// Makes a new TextView that supports `AttributedString`
     /// - Parameters:
     ///   - text: A binding to the attributed text
     ///   - onEditingChanged: A closure that's called after an edit has been applied
     ///   - onCommit: If this is provided, the field will automatically lose focus when the return key is pressed
     public init(
-        _ text: Binding<NSAttributedString>,
+        _ text: Binding<AttributedString>,
         allowRichText: Bool = true,
         @ViewBuilder placeholderView: @escaping () -> PlaceholderView,
         calculatedHeightBinding: Binding<CGFloat>,
@@ -90,7 +53,7 @@ public struct TextView<PlaceholderView>: View where PlaceholderView : Equatable,
         self.placeholderView = placeholderView()
         _text = text
         _isEmpty = Binding(
-            get: { text.wrappedValue.string.isEmpty },
+            get: { text.wrappedValue.characters.isEmpty },
             set: { _ in }
         )
         
@@ -145,47 +108,13 @@ public struct TextView<PlaceholderView>: View where PlaceholderView : Equatable,
 
 @available(iOS 17.0, *)
 extension TextView where PlaceholderView == EmptyEquatableView {
-    /// Makes a new TextView with the specified configuration
-    /// - Parameters:
-    ///   - text: A binding to the text
-    ///   - shouldEditInRange: A closure that's called before an edit it applied, allowing the consumer to prevent the change
-    ///   - onEditingChanged: A closure that's called after an edit has been applied
-    ///   - onCommit: If this is provided, the field will automatically lose focus when the return key is pressed
-    init(
-        _ text: Binding<String>,
-        isFocusing: Binding<Bool>? = nil,
-        shouldEditInRange: ((Range<String.Index>, String) -> Bool)? = nil,
-        onEditingChanged: (() -> Void)? = nil,
-        onCommit: (() -> Void)? = nil,
-        unselectText: Bool = false
-    ) {
-        self.placeholderView = EmptyEquatableView()
-        self._isFocusing = isFocusing ?? .init(get: { false }, set: { _ in })
-        _text = Binding(
-            get: { NSAttributedString(string: text.wrappedValue) },
-            set: { text.wrappedValue = $0.string }
-        )
-        
-        _isEmpty = Binding(
-            get: { text.wrappedValue.isEmpty },
-            set: { _ in }
-        )
-        
-        self.onCommit = onCommit
-        self.shouldEditInRange = shouldEditInRange
-        self.onEditingChanged = onEditingChanged
-        self.unselectText = unselectText
-        
-        allowRichText = false
-    }
-    
-    /// Makes a new TextView that supports `NSAttributedString`
+    /// Makes a new TextView that supports `AttributedString`
     /// - Parameters:
     ///   - text: A binding to the attributed text
     ///   - onEditingChanged: A closure that's called after an edit has been applied
     ///   - onCommit: If this is provided, the field will automatically lose focus when the return key is pressed
     init(
-        _ text: Binding<NSAttributedString>,
+        _ text: Binding<AttributedString>,
         isFocusing: Binding<Bool>? = nil,
         onEditingChanged: (() -> Void)? = nil,
         onCommit: (() -> Void)? = nil,
@@ -194,7 +123,7 @@ extension TextView where PlaceholderView == EmptyEquatableView {
         self.placeholderView = EmptyEquatableView()
         _text = text
         _isEmpty = Binding(
-            get: { text.wrappedValue.string.isEmpty },
+            get: { text.wrappedValue.characters.isEmpty },
             set: { _ in }
         )
         

@@ -7,8 +7,7 @@ extension TextView.Representable {
         
         internal var textView: UIKitTextView? = nil
         
-        private var originalText: NSAttributedString = .init()
-        private var text: Binding<NSAttributedString>
+        private var text: Binding<AttributedString>
         var calculatedHeight: Binding<CGFloat>
         var isFocusing: Binding<Bool>? = nil
         
@@ -17,7 +16,7 @@ extension TextView.Representable {
         var shouldEditInRange: ((Range<String.Index>, String) -> Bool)?
         
         init(
-            text: Binding<NSAttributedString>,
+            text: Binding<AttributedString>,
             calculatedHeight: Binding<CGFloat>,
             shouldEditInRange: ((Range<String.Index>, String) -> Bool)?,
             onEditingChanged: (() -> Void)?,
@@ -38,19 +37,17 @@ extension TextView.Representable {
                     isFocusing.wrappedValue = true
                 }
             }
-            originalText = text.wrappedValue
         }
         
         func textViewDidChange(_ textView: UITextView) {
-                text.wrappedValue = textView.attributedText
-                recalculateHeight()
-                onEditingChanged?()
+            text.wrappedValue = AttributedString(textView.attributedText)
+            recalculateHeight()
+            onEditingChanged?()
         }
         
         func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
             if let onCommit, text == "\n" {
                 onCommit()
-                originalText = NSAttributedString(attributedString: textView.attributedText)
                 textView.resignFirstResponder()
                 return false
             }
@@ -59,13 +56,6 @@ extension TextView.Representable {
         }
         
         func textViewDidEndEditing(_ textView: UITextView) {
-            // this check is to ensure we always commit text when we're not using a closure
-            if onCommit != nil {
-                DispatchQueue.main.async {
-                    self.text.wrappedValue = self.originalText
-                }
-            }
-
             if let isFocusing, isFocusing.wrappedValue {
                 DispatchQueue.main.async {
                     isFocusing.wrappedValue = false
@@ -81,7 +71,14 @@ extension TextView.Representable {
 extension TextView.Representable.Coordinator {
     
     func update(representable: TextView.Representable) {
-        textView?.attributedText = representable.text
+        var nsAttributedString: NSAttributedString
+        do {
+            nsAttributedString = try NSAttributedString(representable.text)
+        } catch(let error) {
+            print(error.localizedDescription)
+            nsAttributedString = .init()
+        }
+        textView?.attributedText = nsAttributedString
         textView?.font = representable.font
         textView?.adjustsFontForContentSizeCategory = true
         textView?.textColor = representable.foregroundColor
