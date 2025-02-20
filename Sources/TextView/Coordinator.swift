@@ -51,7 +51,7 @@ extension TextView.Representable {
             if let onCommit, text == "\n" {
                 onCommit()
                 DispatchQueue.main.async {
-                    self.textView.resignFirstResponder()
+                    self.textView?.resignFirstResponder()
                 }
                 return false
             }
@@ -97,9 +97,9 @@ extension TextView.Representable.Coordinator {
             
             switch representable.multilineTextAlignment {
             case .leading:
-                self.textView?.textAlignment = textView?.traitCollection.layoutDirection ~= .leftToRight ? .left : .right
+                self.textView?.textAlignment = self.textView?.traitCollection.layoutDirection ~= .leftToRight ? .left : .right
             case .trailing:
-                self.textView?.textAlignment = textView?.traitCollection.layoutDirection ~= .leftToRight ? .right : .left
+                self.textView?.textAlignment = self.textView?.traitCollection.layoutDirection ~= .leftToRight ? .right : .left
             case .center:
                 self.textView?.textAlignment = .center
             }
@@ -107,18 +107,18 @@ extension TextView.Representable.Coordinator {
             if let value = representable.enablesReturnKeyAutomatically {
                 self.textView?.enablesReturnKeyAutomatically = value
             } else {
-                self.textView?.enablesReturnKeyAutomatically = onCommit == nil ? false : true
+                self.textView?.enablesReturnKeyAutomatically = self.onCommit == nil ? false : true
             }
             
             if let returnKeyType = representable.returnKeyType {
                 self.textView?.returnKeyType = returnKeyType
             } else {
-                self.textView?.returnKeyType = onCommit == nil ? .default : .done
+                self.textView?.returnKeyType = self.onCommit == nil ? .default : .done
             }
             
             self.textView?.textContainer.lineFragmentPadding = 0
             
-            if textView?.textContainerInset.top != representable.insets.top ||
+            if self.textView?.textContainerInset.top != representable.insets.top ||
                 self.textView?.textContainerInset.left != representable.insets.leading ||
                 self.textView?.textContainerInset.bottom != representable.insets.bottom ||
                 self.textView?.textContainerInset.right != representable.insets.trailing {
