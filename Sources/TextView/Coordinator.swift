@@ -40,7 +40,9 @@ extension TextView.Representable {
         }
         
         func textViewDidChange(_ textView: UITextView) {
-            text.wrappedValue = AttributedString(textView.attributedText)
+            DispatchQueue.main.async {
+                text.wrappedValue = AttributedString(textView.attributedText)
+            }
             recalculateHeight()
             onEditingChanged?()
         }
@@ -48,7 +50,9 @@ extension TextView.Representable {
         func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
             if let onCommit, text == "\n" {
                 onCommit()
-                textView.resignFirstResponder()
+                DispatchQueue.main.async {
+                    textView.resignFirstResponder()
+                }
                 return false
             }
             
@@ -78,51 +82,53 @@ extension TextView.Representable.Coordinator {
             print(error.localizedDescription)
             nsAttributedString = .init()
         }
-        textView?.attributedText = nsAttributedString
-        textView?.font = representable.font
-        textView?.adjustsFontForContentSizeCategory = true
-        textView?.textColor = representable.foregroundColor
-        textView?.autocapitalizationType = representable.autocapitalization
-        textView?.autocorrectionType = representable.autocorrection
-        textView?.isEditable = representable.isEditable
-        textView?.isSelectable = representable.isSelectable
-        textView?.isScrollEnabled = representable.isScrollingEnabled
-        textView?.dataDetectorTypes = representable.autoDetectionTypes
-        textView?.allowsEditingTextAttributes = representable.allowsRichText
-        
-        switch representable.multilineTextAlignment {
-        case .leading:
-            textView?.textAlignment = textView?.traitCollection.layoutDirection ~= .leftToRight ? .left : .right
-        case .trailing:
-            textView?.textAlignment = textView?.traitCollection.layoutDirection ~= .leftToRight ? .right : .left
-        case .center:
-            textView?.textAlignment = .center
-        }
-        
-        if let value = representable.enablesReturnKeyAutomatically {
-            textView?.enablesReturnKeyAutomatically = value
-        } else {
-            textView?.enablesReturnKeyAutomatically = onCommit == nil ? false : true
-        }
-        
-        if let returnKeyType = representable.returnKeyType {
-            textView?.returnKeyType = returnKeyType
-        } else {
-            textView?.returnKeyType = onCommit == nil ? .default : .done
-        }
-        
-        textView?.textContainer.lineFragmentPadding = 0
-        
-        if textView?.textContainerInset.top != representable.insets.top ||
-            textView?.textContainerInset.left != representable.insets.leading ||
-            textView?.textContainerInset.bottom != representable.insets.bottom ||
-            textView?.textContainerInset.right != representable.insets.trailing {
-            textView?.textContainerInset = UIEdgeInsets(
-                top: representable.insets.top,
-                left: representable.insets.leading,
-                bottom: representable.insets.bottom,
-                right: representable.insets.trailing
-            )
+        DispatchQueue.main.async {
+            textView?.attributedText = nsAttributedString
+            textView?.font = representable.font
+            textView?.adjustsFontForContentSizeCategory = true
+            textView?.textColor = representable.foregroundColor
+            textView?.autocapitalizationType = representable.autocapitalization
+            textView?.autocorrectionType = representable.autocorrection
+            textView?.isEditable = representable.isEditable
+            textView?.isSelectable = representable.isSelectable
+            textView?.isScrollEnabled = representable.isScrollingEnabled
+            textView?.dataDetectorTypes = representable.autoDetectionTypes
+            textView?.allowsEditingTextAttributes = representable.allowsRichText
+            
+            switch representable.multilineTextAlignment {
+            case .leading:
+                textView?.textAlignment = textView?.traitCollection.layoutDirection ~= .leftToRight ? .left : .right
+            case .trailing:
+                textView?.textAlignment = textView?.traitCollection.layoutDirection ~= .leftToRight ? .right : .left
+            case .center:
+                textView?.textAlignment = .center
+            }
+            
+            if let value = representable.enablesReturnKeyAutomatically {
+                textView?.enablesReturnKeyAutomatically = value
+            } else {
+                textView?.enablesReturnKeyAutomatically = onCommit == nil ? false : true
+            }
+            
+            if let returnKeyType = representable.returnKeyType {
+                textView?.returnKeyType = returnKeyType
+            } else {
+                textView?.returnKeyType = onCommit == nil ? .default : .done
+            }
+            
+            textView?.textContainer.lineFragmentPadding = 0
+            
+            if textView?.textContainerInset.top != representable.insets.top ||
+                textView?.textContainerInset.left != representable.insets.leading ||
+                textView?.textContainerInset.bottom != representable.insets.bottom ||
+                textView?.textContainerInset.right != representable.insets.trailing {
+                textView?.textContainerInset = UIEdgeInsets(
+                    top: representable.insets.top,
+                    left: representable.insets.leading,
+                    bottom: representable.insets.bottom,
+                    right: representable.insets.trailing
+                )
+            }
         }
         
         recalculateHeight()

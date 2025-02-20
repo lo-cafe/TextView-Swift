@@ -68,12 +68,10 @@ extension TextView {
                 if isFocusing && !textView.isFirstResponder {
                     textView.becomeFirstResponder()
                 } else if !isFocusing && textView.isFirstResponder {
-                    DispatchQueue.main.async {
-                        textView.resignFirstResponder()
-                    }
+                    textView.resignFirstResponder()
                 }
+                textView.selectedRange = unselectText ? .init(location: selectedRange.lowerBound, length: 0) : selectedRange
             }
-            textView.selectedRange = unselectText ? .init(location: selectedRange.lowerBound, length: 0) : selectedRange
         }
         
         @discardableResult func makeCoordinator() -> Coordinator {
