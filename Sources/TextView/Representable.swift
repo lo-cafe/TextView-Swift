@@ -60,11 +60,11 @@ extension TextView {
         }
         
         func updateUIView(_ textView: UIKitTextView, context: Context) {
-            let selectedRange = textView.selectedRange
             context.coordinator.update(representable: self)
             context.coordinator.calculatedHeight = self.$calculatedHeight
             context.coordinator.isFocusing = self._isFocusing
             DispatchQueue.main.async {
+                let selectedRange = textView.selectedRange
                 if isFocusing && !textView.isFirstResponder {
                     textView.becomeFirstResponder()
                 } else if !isFocusing && textView.isFirstResponder {
