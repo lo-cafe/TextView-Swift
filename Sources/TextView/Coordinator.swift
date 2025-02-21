@@ -42,8 +42,8 @@ extension TextView.Representable {
         func textViewDidChange(_ textView: UITextView) {
             DispatchQueue.main.async {
                 self.text.wrappedValue = AttributedString(textView.attributedText)
-                recalculateHeight()
-                onEditingChanged?()
+                self.recalculateHeight()
+                self.onEditingChanged?()
             }
         }
         
@@ -130,8 +130,8 @@ extension TextView.Representable.Coordinator {
                 )
             }
         
-            recalculateHeight()
-            textView?.setNeedsDisplay()
+            self.recalculateHeight()
+            self.textView?.setNeedsDisplay()
         }
     }
     
