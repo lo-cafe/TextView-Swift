@@ -42,9 +42,9 @@ extension TextView.Representable {
         func textViewDidChange(_ textView: UITextView) {
             DispatchQueue.main.async {
                 self.text.wrappedValue = AttributedString(textView.attributedText)
+                recalculateHeight()
+                onEditingChanged?()
             }
-            recalculateHeight()
-            onEditingChanged?()
         }
         
         func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
@@ -129,19 +129,17 @@ extension TextView.Representable.Coordinator {
                     right: representable.insets.trailing
                 )
             }
-        }
         
-        recalculateHeight()
-        textView?.setNeedsDisplay()
+            recalculateHeight()
+            textView?.setNeedsDisplay()
+        }
     }
     
     private func recalculateHeight() {
         if let newSize = textView?.sizeThatFits(CGSize(width: textView?.frame.width ?? 0, height: .greatestFiniteMagnitude)) {
             guard calculatedHeight.wrappedValue != newSize.height else { return }
             
-            DispatchQueue.main.async { // call in next render cycle.
-                self.calculatedHeight.wrappedValue = newSize.height
-            }
+            self.calculatedHeight.wrappedValue = newSize.height
         }
     }
     
